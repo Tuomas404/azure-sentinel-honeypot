@@ -1,0 +1,22 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "RDP brute force: 10+ failed logons from one IP in 1h",
+    "description": "Detects repeated failed logons (EventID 4625) from a single source IP.",
+    "severity": "Medium",
+    "enabled": true,
+    "query": "SecurityEvent | where EventID == 4625 and IpAddress != \"-\" | summarize Attempts = count(), Accounts = make_set(TargetAccount, 10), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by IpAddress | where Attempts >= 10",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["CredentialAccess"],
+    "techniques": ["T1110"],
+    "incidentConfiguration": { "createIncident": true },
+    "entityMappings": [
+      { "entityType": "IP", "fieldMappings": [ { "identifier": "Address", "columnName": "IpAddress" } ] }
+    ]
+  }
+}

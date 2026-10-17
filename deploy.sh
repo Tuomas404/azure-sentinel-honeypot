@@ -12,7 +12,6 @@ VM="${VM:-vm-honeypot}"
 NAME="${RG#rg-}"
 LAW="law-${NAME}"
 SIZE="${SIZE:-Standard_B2als_v2}"
-RULE_ID="8f3c2b1a-4d5e-4f60-9a7b-1c2d3e4f5a6b"
 API_SI="2024-03-01"
 API_DCR="2022-06-01"
 
@@ -62,9 +61,7 @@ az rest --method put -o none \
   --url "https://management.azure.com${VMID}/providers/Microsoft.Insights/dataCollectionRuleAssociations/dcra-${NAME}?api-version=${API_DCR}" \
   --body "{\"properties\":{\"dataCollectionRuleId\":\"${DCRID}\"}}"
 
-echo "== 8/8 Analytics rule"
-az rest --method put -o none \
-  --url "https://management.azure.com${WSID}/providers/Microsoft.SecurityInsights/alertRules/${RULE_ID}?api-version=${API_SI}" \
-  --body @rules/rdp-bruteforce.json
+echo "== 8/8 Analytics rules"
+RG="$RG" SUB="$SUB" bash deploy-rules.sh
 
 echo "Done. Public IP: $(az vm show -d --subscription "$SUB" -g "$RG" -n "$VM" --query publicIps -o tsv)"

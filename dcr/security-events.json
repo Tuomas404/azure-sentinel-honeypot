@@ -1,0 +1,15 @@
+{
+  "location": "",
+  "kind": "Windows",
+  "properties": {
+    "dataSources": {
+      "windowsEventLogs": [
+        { "name": "securityEvents", "streams": ["Microsoft-SecurityEvent"], "xPathQueries": ["Security!*"] }
+      ]
+    },
+    "destinations": {
+      "logAnalytics": [ { "name": "law", "workspaceResourceId": "" } ]
+    },
+    "dataFlows": [ { "streams": ["Microsoft-SecurityEvent"], "destinations": ["law"] } ]
+  }
+}

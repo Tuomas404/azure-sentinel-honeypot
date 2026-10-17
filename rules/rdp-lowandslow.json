@@ -1,0 +1,34 @@
+{
+  "ruleId": "3b9d7e21-5c4a-4e8f-b6d2-9a1f0c3e7d54",
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "RDP low-and-slow brute force: 20+ failed logons in 24h, under 10 per hour",
+    "description": "Detects slow password guessing from one IP that stays below the hourly brute-force threshold.",
+    "severity": "Medium",
+    "enabled": true,
+    "query": "SecurityEvent | where EventID == 4625 and IpAddress != \"-\" | summarize HourlyAttempts = count(), First = min(TimeGenerated), Last = max(TimeGenerated) by IpAddress, Hour = bin(TimeGenerated, 1h) | summarize Attempts = sum(HourlyAttempts), ActiveHours = dcount(Hour), MaxPerHour = max(HourlyAttempts), FirstSeen = min(First), LastSeen = max(Last) by IpAddress | where Attempts >= 20 and ActiveHours >= 3 and MaxPerHour < 10",
+    "queryFrequency": "PT6H",
+    "queryPeriod": "P1D",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT6H",
+    "suppressionEnabled": false,
+    "tactics": ["CredentialAccess"],
+    "techniques": ["T1110"],
+    "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "P1D",
+        "matchingMethod": "AllEntities",
+        "groupByEntities": [],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    },
+    "entityMappings": [
+      { "entityType": "IP", "fieldMappings": [ { "identifier": "Address", "columnName": "IpAddress" } ] }
+    ]
+  }
+}

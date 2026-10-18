@@ -1,0 +1,62 @@
+// attack-stats.kql – honeypotin hyökkäystilasto (Windows-tapahtuma 4625)
+// Ajo: Sentinel → law-honeypot → Logs (KQL mode).
+// Laita kursori yhden kyselyn sisään ja paina Run, niin vain se ajetaan.
+// Vaihda "OMA.IP" omaan IP:hesi VAIN portaalissa. Älä commitoi omaa IP:tä julkiseen repoon.
+// Huom: tapahtumat ≠ kirjautumisyritykset (yksi yritys voi tuottaa useamman 4625:n).
+
+// 1) Yhteenveto
+let omatIPt = dynamic(["OMA.IP"]);
+SecurityEvent
+| where TimeGenerated > ago(30d)
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| where IpAddress !in (omatIPt)
+| summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress),
+            Tunnukset = dcount(TargetUserName),
+            Ensimmainen = min(TimeGenerated), Viimeisin = max(TimeGenerated)
+
+// 2) IP-osoitteittain + maa (geolocation ≠ attribuutio)
+let omatIPt = dynamic(["OMA.IP"]);
+SecurityEvent
+| where TimeGenerated > ago(30d)
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| where IpAddress !in (omatIPt)
+| summarize Tapahtumat = count(), Tunnukset = make_set(TargetUserName, 10),
+            Ensimmainen = min(TimeGenerated), Viimeisin = max(TimeGenerated)
+            by IpAddress
+| extend Maa = tostring(geo_info_from_ip_address(IpAddress).country)
+| order by Tapahtumat desc
+
+// 3) Kokeillut tunnukset
+let omatIPt = dynamic(["OMA.IP"]);
+SecurityEvent
+| where TimeGenerated > ago(30d)
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| where IpAddress !in (omatIPt)
+| summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress) by TargetUserName
+| order by Tapahtumat desc
+
+// 4) Maittain
+let omatIPt = dynamic(["OMA.IP"]);
+SecurityEvent
+| where TimeGenerated > ago(30d)
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| where IpAddress !in (omatIPt)
+| extend Maa = tostring(geo_info_from_ip_address(IpAddress).country)
+| summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress) by Maa
+| order by Tapahtumat desc
+
+// 5) Tunneittain (UTC). Alkaa 19.10., jotta mukana on vain kokonaisia
+//    24/7-vuorokausia (17.10. VM sammui klo 20 UTC, mikä vääristäisi jakaumaa).
+let omatIPt = dynamic(["OMA.IP"]);
+SecurityEvent
+| where TimeGenerated >= datetime(2026-10-19)
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| where IpAddress !in (omatIPt)
+| summarize Tapahtumat = count() by Tunti_UTC = hourofday(TimeGenerated)
+| order by Tunti_UTC asc
+| render columnchart

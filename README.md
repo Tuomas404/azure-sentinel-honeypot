@@ -56,7 +56,7 @@ SecurityEvent
 
 ## Validation
 
-**Test 1, fast brute force (2026-10-17):** 10 failed RDP logons from my own IP within an hour.
+**Test 1, fast brute force (2026-10-17):** 10 failed RDP logon attempts from my own IP within an hour.
 Logs showed 12 × EventID 4625 and 1 × EventID 4740 (account locked out after 10 attempts).
 Rule 1 created an incident, closed as *Benign Positive – suspicious but expected*.
 

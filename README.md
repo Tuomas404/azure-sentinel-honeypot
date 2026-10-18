@@ -74,7 +74,7 @@ Rule 2 created an incident and Rule 1 correctly stayed silent. Closed as *Benign
 
 | | |
 |---|---|
-| Activity | 81 failed RDP logons from one IP, 15:59–19:58 UTC, up to 21 per hour |
+| Activity | 81 failed-logon events (EventID 4625) from one IP, 15:59–19:58 UTC, up to 21 per hour |
 | IP geolocation | India (geolocation shows where the IP is, not who the attacker is) |
 | Accounts tried | `Administrator`, `Admin`: neither exists on the host |
 | Successful remote logons | None (no EventID 4624 logon type 3 or 10 from remote IPs in 3 days) |
@@ -87,7 +87,7 @@ Fix: enabled alert grouping by entity, so repeated alerts from one IP join a sin
 <img width="1330" height="789" alt="India Bruteforce Closed" src="https://github.com/user-attachments/assets/6377fb31-1551-4aa1-9b93-4a00e9739fcd" />
 
 
-A few other IPs made 1–2 attempts each (scanners), below both thresholds by design.
+A few other IPs produced 1–2 failed-logon events each (scanners), below both thresholds by design.
 
 ## CI/CD: detection as code
 

@@ -1,0 +1,46 @@
+# Deploys Sentinel analytics rules when files in rules/ change.
+# Azure login uses OIDC (no stored password): see README, "CI/CD".
+name: Deploy Sentinel rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rules/**"
+      - "deploy-rules.sh"
+      - ".github/workflows/deploy-rules.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # lets the job request an OIDC token for Azure login
+  contents: read
+
+concurrency:
+  group: deploy-rules
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate rule files
+        run: |
+          for f in rules/*.json; do
+            jq -e '.ruleId and .kind and .properties.displayName and .properties.query' "$f" > /dev/null \
+              || { echo "::error file=$f::missing ruleId, kind, displayName or query"; exit 1; }
+            echo "ok: $f"
+          done
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy rules
+        env:
+          WSID: /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-honeypot/providers/Microsoft.OperationalInsights/workspaces/law-honeypot
+        run: bash deploy-rules.sh

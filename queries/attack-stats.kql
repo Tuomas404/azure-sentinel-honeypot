@@ -7,7 +7,7 @@
 // 1) Yhteenveto
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated > ago(30d)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -18,7 +18,7 @@ SecurityEvent
 // 2) IP-osoitteittain + maa (geolocation ≠ attribuutio)
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated > ago(30d)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -31,7 +31,7 @@ SecurityEvent
 // 3) Kokeillut tunnukset
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated > ago(30d)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -41,7 +41,7 @@ SecurityEvent
 // 4) Maittain
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated > ago(30d)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -49,14 +49,16 @@ SecurityEvent
 | summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress) by Maa
 | order by Tapahtumat desc
 
-// 5) Tunneittain (UTC). Alkaa 19.10., jotta mukana on vain kokonaisia
-//    24/7-vuorokausia (17.10. VM sammui klo 20 UTC, mikä vääristäisi jakaumaa).
+// 5) Tunneittain (UTC). Vain kokonaiset 24/7-vuorokaudet 19.–24.10.
+//    (17.10. VM sammui klo 20 UTC, mikä vääristäisi jakaumaa.)
+//    IP_osoitteet = montako eri hyökkääjää kunakin tuntina; yksi iso hyökkäys ei vääristä.
+//    Kaavio: tulosten Chart-välilehti.
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-19)
+| where TimeGenerated >= datetime(2026-10-19) and TimeGenerated < datetime(2026-10-25)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
-| summarize Tapahtumat = count() by Tunti_UTC = hourofday(TimeGenerated)
+| summarize IP_osoitteet = dcount(IpAddress), Tapahtumat = count()
+            by Tunti_UTC = hourofday(TimeGenerated)
 | order by Tunti_UTC asc
-| render columnchart

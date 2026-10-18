@@ -3,7 +3,8 @@
 Internet-exposed Windows Server in Azure, monitored with Microsoft Sentinel.
 Built to practise detection engineering and SOC workflows (SC-200 topics):
 two custom detection rules, both validated with controlled tests, and one real
-internet brute-force attack detected, investigated and closed.
+internet brute-force attack detected, investigated and closed. Rules are managed
+as code and deployed to Sentinel by GitHub Actions, with no stored credentials.
 
 ## Architecture
 
@@ -22,6 +23,8 @@ flowchart LR
 |---|---|
 | `deploy.sh` | Builds the whole lab end to end with Azure CLI |
 | `deploy-rules.sh` | Deploys every rule in `rules/` to Sentinel |
+| `.github/workflows/deploy-rules.yml` | Validates and deploys rules on every push to `rules/` |
+| `setup-ci.sh` | Creates the Azure identity GitHub Actions logs in with (OIDC) |
 | `teardown.sh` | Deletes the lab (asks for confirmation) |
 | `dcr/security-events.json` | Data Collection Rule: Windows Security log to Log Analytics |
 | `rules/rdp-bruteforce.json` | Rule 1: fast brute force |
@@ -86,6 +89,24 @@ Fix: enabled alert grouping by entity, so repeated alerts from one IP join a sin
 
 A few other IPs made 1–2 attempts each (scanners), below both thresholds by design.
 
+## CI/CD: detection as code
+
+```mermaid
+flowchart LR
+  D[Edit rules/*.json] -->|git push| GH[GitHub Actions]
+  GH --> V{Validate JSON}
+  V -->|invalid| X[Stop: nothing deployed]
+  V -->|ok| L[Azure login with OIDC]
+  L --> R[deploy-rules.sh]
+  R --> S[Microsoft Sentinel]
+```
+
+- **Trigger:** push to `main` that changes `rules/`, `deploy-rules.sh` or the workflow. Can also be run by hand.
+- **Validation:** every rule file must have `ruleId`, `kind`, `displayName` and `query`, or the job stops before touching Azure.
+- **No stored passwords:** GitHub gets a short-lived token, and Azure trusts it only for this repo's `main` branch (federated credential on a managed identity).
+- **Least privilege:** the identity has *Microsoft Sentinel Contributor* on the lab resource group only. It can edit rules but cannot change the VM, networking or permissions.
+- **Tested end to end (2026-10-18):** changed Rule 1's description in Git, and the new text and modification time appeared in Sentinel without any manual step.
+
 ## Reproducibility
 
 The full lab was rebuilt from scratch in a separate resource group with `deploy.sh`,
@@ -95,8 +116,9 @@ verified (resources, Trusted Launch, analytics rule) and torn down with `teardow
 git clone https://github.com/Tuomas404/azure-sentinel-honeypot.git
 cd azure-sentinel-honeypot
 bash deploy.sh        # prompts for VM admin password
-bash deploy-rules.sh  # re-deploy rules only, after editing rules/
-bash teardown.sh      # deletes everything
+bash setup-ci.sh      # identity for GitHub Actions, prints values for repo secrets
+bash deploy-rules.sh  # manual rule deploy (CI does this on push)
+bash teardown.sh      # deletes everything, including the CI identity
 ```
 
 ## Lessons learned
@@ -109,6 +131,9 @@ bash teardown.sh      # deletes everything
 - **Account lockout trade-off:** lockout stops password guessing but lets anyone who knows the username lock it (denial of service).
 - **Wrong default subscription:** Azure CLI defaulted to a different production subscription linked to my student account. Every command now pins `--subscription`.
 - **Missing resource providers:** registration errors appeared step by step; all providers are now registered at the start of `deploy.sh`.
+- **OIDC subject format:** the first Actions login failed because GitHub's token subject now contains the owner and repo IDs (`repo:Owner@id/repo@id:...`), not just the names. IDs cannot be reused if a repo is deleted and recreated, which blocks a name-takeover attack. The error message showed the exact subject to trust.
+- **Least privilege has gaps to plan for:** *Microsoft Sentinel Contributor* can edit rules but cannot read the Log Analytics workspace resource itself, so the workflow passes the workspace ID instead of looking it up.
+- **Line endings:** shell scripts edited on Windows can get CRLF line endings that break Bash on Linux runners. `.gitattributes` forces LF for `*.sh`.
 - **Capacity and deprecation:** `Standard_B2s` was unavailable in Sweden Central and the `Win2022Datacenter` image alias is scheduled for deprecation, so the lab uses `Standard_B2als_v2` and Windows Server 2025 Gen2.
 
 ## Cost control
@@ -118,5 +143,4 @@ Budget alert, nightly auto-shutdown, Sentinel 31-day free trial, and `teardown.s
 ## Next steps
 
 - Automation rule to auto-close incidents from known test IPs
-- GitHub Actions to run `deploy-rules.sh` on every commit to `rules/`
 - Bicep version of `deploy.sh`

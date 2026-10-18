@@ -15,7 +15,18 @@
     "suppressionEnabled": false,
     "tactics": ["CredentialAccess"],
     "techniques": ["T1110"],
-    "incidentConfiguration": { "createIncident": true },
+        "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "P1D",
+        "matchingMethod": "AllEntities",
+        "groupByEntities": [],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    },
     "entityMappings": [
       { "entityType": "IP", "fieldMappings": [ { "identifier": "Address", "columnName": "IpAddress" } ] }
     ]

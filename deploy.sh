@@ -28,12 +28,13 @@ az group create --subscription "$SUB" -n "$RG" -l "$LOC" -o none
 echo "== 3/8 VM (Trusted Launch, managed identity, auto-shutdown)"
 IMAGE=$(az vm image list --subscription "$SUB" --publisher MicrosoftWindowsServer --offer WindowsServer \
   --sku 2025-datacenter-g2 --all --query "[-1].urn" -o tsv)
+read -r -p "VM admin username (not admin/administrator): " VMUSER
 read -rs -p "VM admin password: " VMPASS; echo
 az vm create --subscription "$SUB" -g "$RG" -n "$VM" --image "$IMAGE" --size "$SIZE" \
   --security-type TrustedLaunch --enable-secure-boot true --enable-vtpm true \
-  --admin-username labadmin --admin-password "$VMPASS" \
+  --admin-username "$VMUSER" --admin-password "$VMPASS" \
   --public-ip-sku Standard --nsg-rule RDP --assign-identity -o none
-unset VMPASS
+unset VMUSER VMPASS
 az vm auto-shutdown --subscription "$SUB" -g "$RG" -n "$VM" --time 2000 -o none
 
 echo "== 4/8 Log Analytics workspace"

@@ -7,7 +7,7 @@
 // 1) Yhteenveto
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-26)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -18,7 +18,7 @@ SecurityEvent
 // 2) IP-osoitteittain + maa (geolocation ≠ attribuutio)
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-26)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -31,7 +31,7 @@ SecurityEvent
 // 3) Kokeillut tunnukset
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-26)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -41,7 +41,7 @@ SecurityEvent
 // 4) Maittain
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-25)
+| where TimeGenerated >= datetime(2026-10-16) and TimeGenerated < datetime(2026-10-26)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)
@@ -55,7 +55,7 @@ SecurityEvent
 //    Kaavio: tulosten Chart-välilehti.
 let omatIPt = dynamic(["OMA.IP"]);
 SecurityEvent
-| where TimeGenerated >= datetime(2026-10-19) and TimeGenerated < datetime(2026-10-25)
+| where TimeGenerated >= datetime(2026-10-19) and TimeGenerated < datetime(2026-10-26)
 | where EventID == 4625
 | where isnotempty(IpAddress) and IpAddress != "-"
 | where IpAddress !in (omatIPt)

@@ -62,3 +62,27 @@ SecurityEvent
 | summarize IP_osoitteet = dcount(IpAddress), Tapahtumat = count()
             by Tunti_UTC = hourofday(TimeGenerated)
 | order by Tunti_UTC asc
+
+// 6) Onnistuneet kirjautumiset verkosta, oma IP pois (odotus: ei tuloksia)
+SecurityEvent
+| where TimeGenerated between (datetime(2026-10-16) .. datetime(2026-10-26))
+| where EventID == 4624 and LogonType in (3, 10)
+| where IpAddress !in ("OMA.IP", "-", "", "127.0.0.1", "::1")
+| summarize Lkm = count() by Account, LogonType, IpAddress
+
+// 7) Epäonnistumisen syy: 0xc0000064 = tunnusta ei ole, 0xc000006a = väärä salasana, Status 0xc0000234 = lukittu
+SecurityEvent
+| where TimeGenerated between (datetime(2026-10-16) .. datetime(2026-10-26))
+| where EventID == 4625 and IpAddress != "OMA.IP"
+| summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress) by SubStatus
+| order by Tapahtumat desc
+
+// 8) Olemassa olevat tunnukset, joihin osuttiin (väärä salasana tai lukittu)
+SecurityEvent
+| where TimeGenerated between (datetime(2026-10-16) .. datetime(2026-10-26))
+| where EventID == 4625 and IpAddress != "OMA.IP"
+| where SubStatus in ("0xc000006a", "0x0")
+| summarize Tapahtumat = count(), IP_osoitteet = dcount(IpAddress),
+            Ensimmainen_UTC = min(TimeGenerated), Viimeisin_UTC = max(TimeGenerated)
+          by TargetUserName, Status, SubStatus
+| order by Tapahtumat desc
